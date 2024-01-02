@@ -30,6 +30,26 @@ final class ConnectionTests: XCTestCase {
     try await connection.execute("CREATE TABLE test_table (id INTEGER NOT NULL)")
   }
 
+  /// Verifies that an error is thrown when opening a `Connection` at an invalid `URL`.
+  func testConnectionOpenError() async throws {
+    await assertThrows(
+      try await Connection(url: URL(filePath: "")),
+      "No failure when opening connection"
+    )
+  }
+
+  /// Verifies than an error is thrown when executing a malformed query against a `Connection`.
+  func testExecutionError() async throws {
+    // Given:
+    let connection = try await Connection(url: temporaryDatabaseURL())
+
+    // Then:
+    await assertThrows(
+      try await connection.execute("NOT_A_QUERY"),
+      "No failure when executing query"
+    )
+  }
+
   // MARK: Private
 
   /// A `URL` for a temporary directory that can be used throughout this test.
@@ -40,5 +60,16 @@ final class ConnectionTests: XCTestCase {
   /// Returns a `URL` suitable for use for a temporary database.
   private func temporaryDatabaseURL() -> URL {
     temporaryDirectoryURL.appending(path: UUID().uuidString, directoryHint: .notDirectory)
+  }
+
+  /// Asserts that `body` throws an error, failing the current test with `message` if not.
+  private func assertThrows<R>(
+    _ body: @autoclosure () async throws -> R,
+    _ message: String
+  ) async -> Void {
+    do {
+      _ = try await body()
+      XCTFail(message)
+    } catch {}
   }
 }

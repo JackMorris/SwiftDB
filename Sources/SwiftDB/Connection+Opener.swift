@@ -30,12 +30,13 @@ extension Connection {
         nil
       )
       guard let connectionHandle else {
-        fatalError("TODO: Handle errors")
+        throw Error.connectionOpen(url: url, description: "Cannot allocate memory for handle")
       }
 
       guard openResult == SQLITE_OK else {
+        let errorDescription = Error.errorDescription(connectionHandle: connectionHandle)
         sqlite3_close(connectionHandle)
-        fatalError("TODO: Handle errors")
+        throw Error.connectionOpen(url: url, description: errorDescription)
       }
 
       return connectionHandle

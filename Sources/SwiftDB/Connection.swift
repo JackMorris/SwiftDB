@@ -27,7 +27,7 @@ public actor Connection {
   }
 
   deinit {
-    _ = sqlite3_close_v2(connectionHandle)
+    sqlite3_close_v2(connectionHandle)
   }
 
   // MARK: Public
@@ -39,9 +39,19 @@ public actor Connection {
   public func execute(_ query: String) throws {
     // Prepare a statement for `query`, retrieving a `StatementHandle`.
     var statementHandle: StatementHandle?
-    let prepareResult = sqlite3_prepare_v3(connectionHandle, query, -1, 0, &statementHandle, nil)
+    let prepareResult = sqlite3_prepare_v3(
+      connectionHandle,
+      query,
+      -1,
+      0,
+      &statementHandle,
+      nil
+    )
     guard prepareResult == SQLITE_OK, let statementHandle else {
-      fatalError("TODO: Handle errors")
+      throw Error.execute(
+        query: query,
+        description: Error.errorDescription(connectionHandle: connectionHandle)
+      )
     }
 
     // Ensure the statement is finalized following execution (even if execution fails).
@@ -50,7 +60,7 @@ public actor Connection {
     }
 
     // Execute the statement.
-    try execute(statementHandle: statementHandle)
+    try execute(query: query, statementHandle: statementHandle)
   }
 
   // MARK: Private
@@ -59,7 +69,7 @@ public actor Connection {
   private let queue: DispatchQueue
   private nonisolated let executor: Executor
 
-  private func execute(statementHandle: StatementHandle) throws {
+  private func execute(query: String, statementHandle: StatementHandle) throws {
     // Continuously call `sqlite3_step` until execution is complete, or there's an error.
     while true {
       let stepResult = sqlite3_step(statementHandle)
@@ -69,7 +79,10 @@ public actor Connection {
       case SQLITE_ROW:
         continue
       default:
-        fatalError("TODO: Handle errors")
+        throw Error.execute(
+          query: query,
+          description: Error.errorDescription(connectionHandle: connectionHandle)
+        )
       }
     }
   }
