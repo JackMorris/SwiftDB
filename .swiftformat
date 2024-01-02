@@ -1,0 +1,85 @@
+--exclude engine-rust
+--exclude Carv-Swift/Engine
+--exclude Carv-Swift/Assets
+--swiftversion 5.5
+
+--rules anyObjectProtocol
+--rules assertionFailures
+--rules blankLinesAroundMark
+--rules blankLinesAtEndOfScope
+--rules blankLinesAtStartOfScope
+--rules braces
+--rules consecutiveBlankLines
+--rules consecutiveSpaces
+--rules duplicateImports
+--rules emptyBraces
+--rules enumNamespaces
+--rules linebreakAtEndOfFile
+--rules modifierOrder
+--rules organizeDeclarations
+--rules preferKeyPath
+--rules redundantBackticks
+--rules redundantBreak
+--rules redundantClosure
+--rules redundantFileprivate
+--rules redundantGet
+--rules redundantInit
+--rules redundantLet
+--rules redundantLetError
+--rules redundantNilInit
+--rules redundantObjc
+--rules redundantParens
+--rules redundantPattern
+--rules redundantRawValues
+--rules redundantVoidReturnType
+--rules semicolons
+--rules sortImports
+--rules spaceAroundBraces
+--rules spaceAroundBrackets
+--rules spaceAroundComments
+--rules spaceAroundGenerics
+--rules spaceAroundOperators
+--rules spaceAroundParens
+--rules spaceInsideBraces
+--rules spaceInsideBrackets
+--rules spaceInsideComments
+--rules spaceInsideGenerics
+--rules spaceInsideParens
+--rules strongifiedSelf
+--rules todos
+--rules trailingCommas
+--rules trailingSpace
+--rules unusedArguments
+--rules void
+--rules wrapMultilineStatementBraces
+
+--rules markTypes
+--markextensions never
+
+--rules indent
+--indent 2
+
+--rules numberFormatting
+--binarygrouping 3,6
+--decimalgrouping 3,6
+--fractiongrouping enabled
+
+--rules redundantSelf
+--self remove
+
+--rules wrap
+--maxwidth 94
+
+--rules wrapArguments
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections before-first
+
+--rules wrapAttributes
+--funcattributes prev-line
+
+--rules fileHeader
+--header strip
+
+--rules extensionAccessControl
+--extensionacl on-declarations
