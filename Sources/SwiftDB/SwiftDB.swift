@@ -1,2 +1,5 @@
-// The Swift Programming Language
-// https://docs.swift.org/swift-book
+/// An opaque handle to a SQLite connection.
+typealias ConnectionHandle = OpaquePointer
+
+/// An opaque handle to a SQLite statement.
+typealias StatementHandle = OpaquePointer
