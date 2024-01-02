@@ -62,8 +62,9 @@ public actor Connection {
   private func execute(statementHandle: StatementHandle) throws {
     // Continuously call `sqlite3_step` until execution is complete, or there's an error.
     while true {
-      switch sqlite3_step(statementHandle) {
-      case SQLITE_OK:
+      let stepResult = sqlite3_step(statementHandle)
+      switch stepResult {
+      case SQLITE_DONE:
         return
       case SQLITE_ROW:
         continue
