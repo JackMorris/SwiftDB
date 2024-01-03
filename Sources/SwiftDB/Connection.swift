@@ -36,7 +36,8 @@ public actor Connection {
     executor.asUnownedSerialExecutor()
   }
 
-  public func execute(_ query: String) throws {
+  @discardableResult
+  public func execute(_ query: String, _ arguments: any ValueConvertible...) throws -> [Row] {
     // Prepare a statement for `query`, retrieving a `StatementHandle`.
     var statementHandle: StatementHandle?
     let prepareResult = sqlite3_prepare_v3(
@@ -54,13 +55,25 @@ public actor Connection {
       )
     }
 
-    // Ensure the statement is finalized following execution (even if execution fails).
+    // Ensure the statement is finalized following execution (even if execution or binding fails).
     defer {
       sqlite3_finalize(statementHandle)
     }
 
+    // Bind all arguments into the statement.
+    var index = 1
+    for argumentValue in arguments.map(\.value) {
+      try argumentValue.bind(
+        connectionHandle: connectionHandle,
+        statementHandle: statementHandle,
+        index: index,
+        query: query
+      )
+      index += 1
+    }
+
     // Execute the statement.
-    try execute(query: query, statementHandle: statementHandle)
+    return try execute(query: query, statementHandle: statementHandle)
   }
 
   // MARK: Private
@@ -69,14 +82,59 @@ public actor Connection {
   private let queue: DispatchQueue
   private nonisolated let executor: Executor
 
-  private func execute(query: String, statementHandle: StatementHandle) throws {
+  private func execute(query: String, statementHandle: StatementHandle) throws -> [Row] {
+    var rows: [Row] = []
+    var cachedColumnNames: [String]?
+
     // Continuously call `sqlite3_step` until execution is complete, or there's an error.
     while true {
       let stepResult = sqlite3_step(statementHandle)
+
+      // Check for errors.
+      guard stepResult == SQLITE_ROW || stepResult == SQLITE_DONE else {
+        throw Error.execute(
+          query: query,
+          description: Error.errorDescription(connectionHandle: connectionHandle)
+        )
+      }
+
+      // Extract the row.
+      let columnNames = try {
+        if let cachedColumnNames {
+          return cachedColumnNames
+        } else {
+          let columnCount = Int(sqlite3_column_count(statementHandle))
+          let columnNames = try (0 ..< columnCount).map { index in
+            guard let columnNamePointer = sqlite3_column_name(statementHandle, Int32(index))
+            else {
+              throw Error.execute(
+                query: query,
+                description: Error.errorDescription(connectionHandle: connectionHandle)
+              )
+            }
+            return String(cString: columnNamePointer)
+          }
+          cachedColumnNames = columnNames
+          return columnNames
+        }
+      }()
+      if stepResult == SQLITE_ROW {
+        rows.append(try (0 ..< columnNames.count).reduce(into: Row()) { row, columnIndex in
+          row[columnNames[columnIndex]] = try Value(
+            connectionHandle: connectionHandle,
+            statementHandle: statementHandle,
+            query: query,
+            columnIndex: columnIndex,
+            columnName: columnNames[columnIndex]
+          )
+        })
+      }
+
       switch stepResult {
       case SQLITE_DONE:
-        return
+        return rows
       case SQLITE_ROW:
+        // More rows to fetch, continue stepping.
         continue
       default:
         throw Error.execute(

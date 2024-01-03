@@ -3,7 +3,7 @@ import SQLite3
 
 // MARK: - Value
 
-public enum Value: Sendable {
+public enum Value: Sendable, Equatable {
   case null
   case integer(Int64)
   case real(Double)

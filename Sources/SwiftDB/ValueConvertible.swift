@@ -3,18 +3,18 @@ import Foundation
 // MARK: - ValueConvertible
 
 /// A type that can be converted to/from a `Value`.
-protocol ValueConvertible {
+public protocol ValueConvertible: Sendable {
   var value: Value { get }
   init(value: Value) throws
 }
 
 extension Value: ValueConvertible {
-  var value: Value { self }
-  init(value: Value) { self = value }
+  public var value: Value { self }
+  public init(value: Value) { self = value }
 }
 
 extension Optional: ValueConvertible where Wrapped: ValueConvertible {
-  var value: Value {
+  public var value: Value {
     if let self {
       self.value
     } else {
@@ -22,7 +22,7 @@ extension Optional: ValueConvertible where Wrapped: ValueConvertible {
     }
   }
 
-  init(value: Value) throws {
+  public init(value: Value) throws {
     switch value {
     case .null:
       self = nil
@@ -33,11 +33,11 @@ extension Optional: ValueConvertible where Wrapped: ValueConvertible {
 }
 
 extension Int: ValueConvertible {
-  var value: Value {
+  public var value: Value {
     .integer(Int64(self))
   }
 
-  init(value: Value) throws {
+  public init(value: Value) throws {
     switch value {
     case .integer(let integer):
       self = Int(integer)
@@ -48,11 +48,11 @@ extension Int: ValueConvertible {
 }
 
 extension Double: ValueConvertible {
-  var value: Value {
+  public var value: Value {
     .real(self)
   }
 
-  init(value: Value) throws {
+  public init(value: Value) throws {
     switch value {
     case .real(let real):
       self = real
@@ -63,11 +63,11 @@ extension Double: ValueConvertible {
 }
 
 extension String: ValueConvertible {
-  var value: Value {
+  public var value: Value {
     .text(self)
   }
 
-  init(value: Value) throws {
+  public init(value: Value) throws {
     switch value {
     case .text(let text):
       self = text
@@ -78,11 +78,11 @@ extension String: ValueConvertible {
 }
 
 extension Data: ValueConvertible {
-  var value: Value {
+  public var value: Value {
     .blob(self)
   }
 
-  init(value: Value) throws {
+  public init(value: Value) throws {
     switch value {
     case .blob(let blob):
       self = blob

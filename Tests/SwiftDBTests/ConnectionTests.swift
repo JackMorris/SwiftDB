@@ -50,6 +50,33 @@ final class ConnectionTests: XCTestCase {
     )
   }
 
+  /// Verifies that values can be bound into queries, before being fetched.
+  func testFetchValues() async throws {
+    // Given:
+    let connection = try await Connection(url: temporaryDatabaseURL())
+
+    // When:
+    try await connection.execute("CREATE TABLE test (id INTEGER NOT NULL, info TEXT)")
+    try await connection.execute("INSERT INTO test VALUES (1, ?)", "info_1")
+    try await connection.execute("INSERT INTO test VALUES (2, ?)", "info_2")
+    try await connection.execute("INSERT INTO test VALUES (3, ?)", Value.null)
+    let rows = try await connection.execute("SELECT * FROM test ORDER BY id ASC")
+
+    // Then:
+    // Verify `rows` directly.
+    XCTAssertEqual(rows[0], ["id": .integer(1), "info": .text("info_1")])
+    XCTAssertEqual(rows[1], ["id": .integer(2), "info": .text("info_2")])
+    XCTAssertEqual(rows[2], ["id": .integer(3), "info": .null])
+
+    // Verify extracting individual values from `rows`.
+    XCTAssertEqual(try rows[0]["id"]?.get(), 1)
+    XCTAssertEqual(try rows[1]["id"]?.get(), 2)
+    XCTAssertEqual(try rows[2]["id"]?.get(), 3)
+    XCTAssertEqual(try rows[0]["info"]?.get(), "info_1")
+    XCTAssertEqual(try rows[1]["info"]?.get(), "info_2")
+    XCTAssertEqual(try rows[2]["info"]?.get(), String?.none)
+  }
+
   // MARK: Private
 
   /// A `URL` for a temporary directory that can be used throughout this test.
