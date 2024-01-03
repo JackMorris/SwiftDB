@@ -8,6 +8,10 @@ enum Error: Swift.Error {
   case execute(query: String, description: String)
   /// `Value` cannot be converted to the expected type (`expectedTargetType`).
   case unexpectedValueType(value: Value, expectedTargetType: String)
+  /// There was an error binding `value` to `argumentIndex` in `query`.
+  case argumentBind(query: String, argumentIndex: Int, value: Value, description: String)
+  /// There was an error whilst extracting a result value from the executed `query`.
+  case resultValue(query: String, column: String)
 
   // MARK: Internal
 
