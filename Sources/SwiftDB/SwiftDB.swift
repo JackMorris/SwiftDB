@@ -1,3 +1,5 @@
+public typealias Row = [String: Value]
+
 /// An opaque handle to a SQLite connection.
 typealias ConnectionHandle = OpaquePointer
 

@@ -6,6 +6,8 @@ enum Error: Swift.Error {
   case connectionOpen(url: URL, description: String)
   /// An error occurred when executing `query`.
   case execute(query: String, description: String)
+  /// `Value` cannot be converted to the expected type (`expectedTargetType`).
+  case unexpectedValueType(value: Value, expectedTargetType: String)
 
   // MARK: Internal
 
