@@ -21,7 +21,6 @@ public actor Connection {
     self.executor = executor
 
     // Initialize the connection.
-    try execute("PRAGMA journal_mode = WAL")
     try execute("PRAGMA synchronous = NORMAL")
     try execute("PRAGMA foreign_keys = ON")
   }
@@ -37,7 +36,10 @@ public actor Connection {
   }
 
   @discardableResult
-  public func execute(_ query: String, _ arguments: any ValueConvertible...) throws -> [Row] {
+  public func execute(
+    _ query: String,
+    _ arguments: any ValueConvertible...
+  ) throws -> [Row] {
     // Prepare a statement for `query`, retrieving a `StatementHandle`.
     var statementHandle: StatementHandle?
     let prepareResult = sqlite3_prepare_v3(
@@ -74,6 +76,23 @@ public actor Connection {
 
     // Execute the statement.
     return try execute(query: query, statementHandle: statementHandle)
+  }
+
+  // MARK: Internal
+
+  @discardableResult
+  func transaction<R>(
+    _ action: @Sendable (_ connection: isolated Connection) throws -> R
+  ) throws -> R {
+    try execute("BEGIN TRANSACTION")
+    do {
+      let result = try action(self)
+      try execute("COMMIT TRANSACTION")
+      return result
+    } catch {
+      try execute("ROLLBACK TRANSACTION")
+      throw error
+    }
   }
 
   // MARK: Private

@@ -77,6 +77,36 @@ final class ConnectionTests: XCTestCase {
     XCTAssertEqual(try rows[2]["info"]?.get(), String?.none)
   }
 
+  func testPool() async throws {
+    // Given:
+    let pool = Pool(url: temporaryDatabaseURL(), maxReaders: 8)
+    try await pool.write { try $0.execute("CREATE TABLE test (id INTEGER NOT NULL)") }
+
+    // "Concurrent" writes.
+    try await withThrowingTaskGroup(of: Void.self) { group in
+      for _ in 0 ..< 100 {
+        group.addTask {
+          _ = try await pool.write { connection in
+            try connection.execute("INSERT INTO test VALUES (?)", Int.random(in: 0 ... 1000))
+          }
+        }
+      }
+      try await group.waitForAll()
+    }
+
+    // Concurrent reads.
+    try await withThrowingTaskGroup(of: Void.self) { group in
+      for _ in 0 ..< 1000 {
+        group.addTask {
+          _ = try await pool.read { connection in
+            try connection.execute("SELECT * FROM test")
+          }
+        }
+      }
+      try await group.waitForAll()
+    }
+  }
+
   // MARK: Private
 
   /// A `URL` for a temporary directory that can be used throughout this test.
