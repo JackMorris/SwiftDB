@@ -79,7 +79,7 @@ final class ConnectionTests: XCTestCase {
 
   func testPool() async throws {
     // Given:
-    let pool = Pool(url: temporaryDatabaseURL(), maxReaders: 8)
+    let pool = Pool(url: temporaryDatabaseURL(), maxReaders: 8, migrations: [])
     try await pool.write { try $0.execute("CREATE TABLE test (id INTEGER NOT NULL)") }
 
     // "Concurrent" writes.

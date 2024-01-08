@@ -3,10 +3,10 @@ import Foundation
 public final class Pool: Sendable {
   // MARK: Lifecycle
 
-  public init(url: URL, maxReaders: Int) {
+  public init(url: URL, maxReaders: Int, migrations: [Migration]) {
     initializeWriteConnectionTask = Task {
       let writeConnection = try await Connection(url: url)
-      try await writeConnection.execute("PRAGMA journal_mode = WAL")
+      try await Self.initializeDatabase(connection: writeConnection, migrations: migrations)
       return writeConnection
     }
     readConnections = AsyncPool(maxElements: maxReaders) {
@@ -44,6 +44,13 @@ public final class Pool: Sendable {
 
   private let initializeWriteConnectionTask: Task<Connection, any Swift.Error>
   private let readConnections: AsyncPool<Connection>
+
+  private static func initializeDatabase(
+    connection: Connection,
+    migrations _: [Migration]
+  ) async throws {
+    try await connection.execute("PRAGMA journal_mode = WAL")
+  }
 
   private func waitForReady() async throws {
     _ = try await initializeWriteConnectionTask.value
