@@ -1,3 +1,7 @@
+/// A migration that can be applied to a database.
+///
+/// Migration versions must be `>0`, and migrations must be applied in increasing-version order.
+/// Migrations must _not_ modify their `action` for the same `version`.
 public struct Migration: Sendable {
   // MARK: Lifecycle
 

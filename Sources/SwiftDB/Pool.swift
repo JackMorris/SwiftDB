@@ -47,9 +47,24 @@ public final class Pool: Sendable {
 
   private static func initializeDatabase(
     connection: Connection,
-    migrations _: [Migration]
+    migrations: [Migration]
   ) async throws {
     try await connection.execute("PRAGMA journal_mode = WAL")
+
+    try await connection.transaction { connection in
+      let currentVersion = try connection
+        .execute("PRAGMA user_version")
+        .first?["user_version"]?
+        .get(Int.self) ?? 0
+
+      let pendingMigrations = migrations.filter { $0.version > currentVersion }
+      if !pendingMigrations.isEmpty {
+        for migration in pendingMigrations {
+          try migration.action(connection)
+        }
+        try connection.execute("PRAGMA user_version = \(migrations.last?.version ?? 0)")
+      }
+    }
   }
 
   private func waitForReady() async throws {

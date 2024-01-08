@@ -107,6 +107,43 @@ final class ConnectionTests: XCTestCase {
     }
   }
 
+  func testMigrations() async throws {
+    // Given:
+    let databaseURL = temporaryDatabaseURL()
+    var migrations = [
+      Migration(version: 1) { try $0.execute("CREATE TABLE test_1 (id INTEGER NOT NULL)") },
+      Migration(version: 2) { try $0.execute("CREATE TABLE test_2 (id INTEGER NOT NULL)") },
+    ]
+
+    // Then:
+    try await {
+      let pool = Pool(url: databaseURL, maxReaders: 1, migrations: migrations)
+      try await pool.read { try $0.execute("SELECT * from test_1") }
+      try await pool.read { try $0.execute("SELECT * from test_2") }
+    }()
+
+    // Verify that opening another pool succeeds, without attempting to recreate the tables.
+    try await {
+      let pool = Pool(url: databaseURL, maxReaders: 1, migrations: migrations)
+      try await pool.read { try $0.execute("SELECT * from test_1") }
+      try await pool.read { try $0.execute("SELECT * from test_2") }
+    }()
+
+    // When:
+    // Verify that adding a further migration will run it on next pool init.
+    migrations.append(Migration(version: 3) {
+      try $0.execute("CREATE TABLE test_3 (id INTEGER NOT NULL)")
+    })
+
+    // Then:
+    try await {
+      let pool = Pool(url: databaseURL, maxReaders: 1, migrations: migrations)
+      try await pool.read { try $0.execute("SELECT * from test_1") }
+      try await pool.read { try $0.execute("SELECT * from test_2") }
+      try await pool.read { try $0.execute("SELECT * from test_3") }
+    }()
+  }
+
   // MARK: Private
 
   /// A `URL` for a temporary directory that can be used throughout this test.
